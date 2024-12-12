@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MapmyIndia with Enhanced Polygon Layer</title>
+    <script src="https://apis.mapmyindia.com/advancedmaps/v1/9d72a18e97e3d8ed15e22a4f0dd563a8/map_load?v=1.5"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      #map {
+        height: 100vh;
+        width: 100%;
+        border: 2px solid #007bff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      #sidebar {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 400px;
+        height: 100vh;
+        background: #f9f9f9;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+        overflow-y: auto;
+        padding: 20px;
+        display: none;
+        z-index: 1000;
+      }
+
+      #sidebar .close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #ff4d4d;
+        color: #ffffff;
+        border: none;
+        border-radius: 50%;
+        padding: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+
+      #sidebar h2 {
+        font-size: 22px;
+        color: #333;
+        margin-bottom: 15px;
+      }
+
+      #sidebar table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+      }
+
+      #sidebar table, #sidebar th, #sidebar td {
+        border: 1px solid #ddd;
+      }
+
+      #sidebar th, #sidebar td {
+        padding: 10px;
+        text-align: left;
+      }
+
+      #sidebar th {
+        background-color: #f4f4f4;
+        color: #333;
+      }
+
+      #navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 50px;
+        background-color: #007bff;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        z-index: 1001;
+      }
+
+      #navbar h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+
+      #navbar a {
+        color: #fff;
+        text-decoration: none;
+        font-size: 16px;
+      }
+
+      .leaflet-popup-content-wrapper {
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .leaflet-popup-content h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #333;
+      }
+
+      .leaflet-popup-content p {
+        font-size: 14px;
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="navbar">
+      <h1>MapmyIndia - Enhanced Map</h1>
+      <a href="#">Home</a>
+    </div>
+
+    <div id="map"></div>
+    <div id="sidebar">
+      <button class="close-btn" onclick="closeSidebar()">&times;</button>
+      <div id="sidebar-content"></div>
+    </div>
+
+    <script>
+      // Initialize the MapmyIndia map
+      let map = new MapmyIndia.Map("map", {
+        center: [23.259933, 77.412613], // Latitude and Longitude of the map center
+        zoom: 8, // Initial zoom level
+      });
+
+      // Inject the GeoJSON data from the backend
+      const mapData = <%- JSON.stringify(mapData) %>;
+
+      // Iterate through the GeoJSON features and add polygons with hover and click events
+      mapData.features.forEach((feature) => {
+        if (feature.geometry.type === "Polygon") {
+          // Convert GeoJSON coordinates to Leaflet format (lat, lng)
+          const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
+            coord[1], // Latitude
+            coord[0], // Longitude
+          ]);
+
+          // Create a Leaflet polygon
+          const polygon = L.polygon(polygonCoords, {
+            color: "#007bff", // Border color
+            fillColor: "#007bff", // Fill color
+            fillOpacity: 0.4, // Transparency
+            weight: 2, // Border weight
+          }).addTo(map);
+
+          // Add hover effect to display a tooltip with name and description
+          polygon.bindTooltip(() => {
+            return `
+              <b>Name:</b> ${feature.properties.name || "N/A"}<br>
+              <b>Description:</b> ${feature.properties.description || "N/A"}`;
+          });
+
+          // Add click event to display detailed information in the sidebar
+          polygon.on("click", function () {
+            showSidebar(feature.properties);
+          });
+
+          // Add a popup with name and description
+          polygon.bindPopup(`
+            <h3>${feature.properties.name || "Unknown"}</h3>
+            <p>${feature.properties.description || "No description available."}</p>
+          `);
+        }
+      });
+
+      // Function to show the sidebar with feature information in table format
+      function showSidebar(properties) {
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("sidebar-content");
+
+        // Remove brackets and format issue data with pointer list
+        let issueData = properties.issue || "No issues listed";
+        if (Array.isArray(issueData)) {
+          issueData = `<ul>${issueData.map(item => `<li>${item}</li>`).join("")}</ul>`;
+        }
+
+        // Populate the sidebar with feature properties in table format
+        content.innerHTML = `
+          <h2>Assembly Details</h2>
+          <table>
+            <tr><th>Property</th><th>Value</th></tr>
+            ${Object.entries(properties)
+              .filter(([key, value]) => key !== "issue")
+              .map(
+                ([key, value]) =>
+                  `<tr><td>${key}</td><td>${value}</td></tr>`
+              )
+              .join("")}
+          </table>
+          <h3>Issues:</h3>
+          ${issueData}
+        `;
+
+        // Display the sidebar
+        sidebar.style.display = "block";
+      }
+
+      // Function to close the sidebar
+      function closeSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.style.display = "none";
+      }
+    </script>
+  </body>
+</html>
