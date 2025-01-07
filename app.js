@@ -23,9 +23,7 @@ app.get('/', (req, res) => {
 });
 
 
-app.get("/data", (req, res)=>{
-    res.send("hello mappp")
-})
+
 
 // Start the server
 const PORT = 3000; // Port number
