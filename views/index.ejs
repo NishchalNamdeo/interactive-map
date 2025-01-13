@@ -5,245 +5,153 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MapmyIndia with Enhanced Polygon Layer</title>
     <script src="https://apis.mapmyindia.com/advancedmaps/v1/9d72a18e97e3d8ed15e22a4f0dd563a8/map_load?v=1.5"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body {
         margin: 0;
         font-family: Arial, sans-serif;
       }
-
-      #map {
-        height: 100vh;
-        width: 100%;
-        border: 2px solid #007bff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      }
-
       #sidebar {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 400px;
-        height: 100vh;
-        background: #f9f9f9;
-        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
-        overflow-y: auto;
-        padding: 20px;
         display: none;
+        position: absolute;
+        top: 10%;
+        right: -35%;
+        width: 30%;
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         z-index: 1000;
+        max-height: 80%;
+        overflow-y: auto;
+        border-radius: 8px;
+        padding: 20px;
+        transition: right 0.3s ease-in-out;
       }
-
-      #sidebar .close-btn {
+      #sidebar.active {
+        display: block;
+        right: 5%;
+      }
+      #close-btn {
         position: absolute;
         top: 10px;
         right: 10px;
-        background: #ff4d4d;
-        color: #ffffff;
+        background-color: #dc3545;
+        color: white;
         border: none;
         border-radius: 50%;
-        padding: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-      }
-
-      #sidebar h2 {
-        font-size: 22px;
-        color: #333;
-        margin-bottom: 15px;
-      }
-
-      #sidebar table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-bottom: 15px;
-      }
-
-      #sidebar table, #sidebar th, #sidebar td {
-        border: 1px solid #ddd;
-      }
-
-      #sidebar th, #sidebar td {
-        padding: 10px;
-        text-align: left;
-      }
-
-      #sidebar th {
-        background-color: #f4f4f4;
-        color: #333;
-      }
-
-      #navbar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 50px;
-        background-color: #007bff;
-        color: #fff;
+        width: 30px;
+        height: 30px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        z-index: 1001;
+        justify-content: center;
+        cursor: pointer;
       }
-
-      #navbar h1 {
-        font-size: 18px;
-        margin: 0;
-      }
-
-      #navbar a {
-        color: #fff;
-        text-decoration: none;
-        font-size: 16px;
-      }
-
-      .leaflet-popup-content-wrapper {
-        background-color: #ffffff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        overflow: hidden;
-      }
-
-      .leaflet-popup-content h3 {
-        margin: 0;
-        font-size: 16px;
-        color: #333;
-      }
-
-      .leaflet-popup-content p {
-        font-size: 14px;
-        margin: 5px 0;
+      #map {
+        height: 100vh;
+        width: 100%;
       }
     </style>
   </head>
   <body>
+    <div id="map" class="border-2 border-blue-500 shadow-lg"></div>
 
-    <div id="map"></div>
     <div id="sidebar">
-      <button class="close-btn" onclick="closeSidebar()">&times;</button>
+      <button id="close-btn" onclick="closeSidebar()">&times;</button>
       <div id="sidebar-content"></div>
     </div>
 
     <script>
       // Initialize the MapmyIndia map
       let map = new MapmyIndia.Map("map", {
-        center: [23.259933, 77.412613], // Latitude and Longitude of the map center
-        zoom: 8, // Initial zoom level
+        center: [23.259933, 77.412613],
+        zoom: 8,
       });
+
+      let activePolygon = null; // Store reference to the active polygon
 
       // Inject the GeoJSON data from the backend
       const mapData = <%- JSON.stringify(mapData) %>;
 
-      // Iterate through the GeoJSON features and add polygons with hover and click events
       mapData.features.forEach((feature) => {
         if (feature.geometry.type === "Polygon") {
-          // Convert GeoJSON coordinates to Leaflet format (lat, lng)
           const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
-            coord[1], // Latitude
-            coord[0], // Longitude
+            coord[1],
+            coord[0],
           ]);
 
-          // Create a Leaflet polygon
           const polygon = L.polygon(polygonCoords, {
-            color: "#007bff", // Border color
-            fillColor: "#007bff", // Fill color
-            fillOpacity: 0.4, // Transparency
-            weight: 2, // Border weight
+            color: "#007bff",
+            fillColor: "#007bff",
+            fillOpacity: 0.4,
+            weight: 2,
           }).addTo(map);
 
-          // Add hover effect to display a tooltip with name and description
+          // Add hover tooltip
           polygon.bindTooltip(() => {
             return `
               <b>Name:</b> ${feature.properties.name || "N/A"}<br>
               <b>Description:</b> ${feature.properties.description || "N/A"}`;
           });
 
-          // Add click event to display detailed information in the sidebar
+          // Click handler to show sidebar and highlight polygon
           polygon.on("click", function () {
+            if (activePolygon) {
+              activePolygon.setStyle({
+                color: "#007bff",
+                fillColor: "#007bff",
+                fillOpacity: 0.4,
+              });
+            }
+
+            polygon.setStyle({
+              color: "#ffeb3b",
+              fillColor: "#ffeb3b",
+              fillOpacity: 0.6,
+            });
+
+            activePolygon = polygon;
             showSidebar(feature.properties);
           });
-
-          // Add a popup with name and description
-          polygon.bindPopup(`
-            <h3>${feature.properties.name || "Unknown"}</h3>
-            <p>${feature.properties.description || "No description available."}</p>
-          `);
         }
       });
 
-      // Function to show the sidebar with feature information in table format
       function showSidebar(properties) {
         const sidebar = document.getElementById("sidebar");
         const content = document.getElementById("sidebar-content");
 
-        // Format winner_party, winning_candidates, gender_electors, and vote_share
-        const winnerParty = properties.details?.winner_party ?
-          `<table><tr><th>Year</th><th>Party</th></tr>${Object.entries(properties.details.winner_party).map(([year, party]) => `<tr><td>${year}</td><td>${party}</td></tr>`).join("")}</table>` :
-          "No winner party details available.";
+        const winnerParty = properties.details?.winner_party
+          ? `<table class='table-auto w-full border-collapse border border-gray-300 text-sm'><thead><tr class='bg-gray-200'><th class='border border-gray-300 px-2 py-1'>Year</th><th class='border border-gray-300 px-2 py-1'>Party</th></tr></thead><tbody>${Object.entries(properties.details.winner_party).map(([year, party]) => `<tr><td class='border border-gray-300 px-2 py-1'>${year}</td><td class='border border-gray-300 px-2 py-1'>${party}</td></tr>`).join("")}</tbody></table>`
+          : "<p class='text-sm text-gray-500'>No winner party details available.</p>";
 
-        const winningCandidates = properties.details?.winning_candidates ?
-          `<table><tr><th>Name</th><th>Votes</th><th>Party</th></tr>${properties.details.winning_candidates.map(candidate => `<tr><td>${candidate.name}</td><td>${candidate.votes}</td><td>${candidate.party}</td></tr>`).join("")}</table>` :
-          "No winning candidates data available.";
+        const winningCandidates = properties.details?.winning_candidates
+          ? `<table class='table-auto w-full border-collapse border border-gray-300 text-sm'><thead><tr class='bg-gray-200'><th class='border border-gray-300 px-2 py-1'>Name</th><th class='border border-gray-300 px-2 py-1'>Votes</th><th class='border border-gray-300 px-2 py-1'>Party</th></tr></thead><tbody>${properties.details.winning_candidates.map(candidate => `<tr><td class='border border-gray-300 px-2 py-1'>${candidate.name}</td><td class='border border-gray-300 px-2 py-1'>${candidate.votes}</td><td class='border border-gray-300 px-2 py-1'>${candidate.party}</td></tr>`).join("")}</tbody></table>`
+          : "<p class='text-sm text-gray-500'>No winning candidates data available.</p>";
 
-        const genderElectors = properties.details?.gender_electors ?
-          `<table><tr><th>Gender</th><th>Count</th></tr>${Object.entries(properties.details.gender_electors).map(([gender, count]) => `<tr><td>${gender}</td><td>${count}</td></tr>`).join("")}</table>` :
-          "No gender electors data available.";
-
-        const voteShare = properties.details?.vote_share ?
-          `<table><tr><th>Party</th><th>Vote Share (%)</th></tr>${Object.entries(properties.details.vote_share).map(([party, share]) => `<tr><td>${party}</td><td>${share}</td></tr>`).join("")}</table>` :
-          "No vote share data available.";
-
-        // Format MLA details and issues as pointer lists
-        const mlaDetails = properties.mla_details ?
-          `<ul>${properties.mla_details.controversies.map((item) => `<li>${item}</li>`).join("")}</ul>` :
-          "No MLA details available";
-
-        const issueData = properties.issues ?
-          `<ul>${properties.issues.map((item) => `<li>${item}</li>`).join("")}</ul>` :
-          "No issues listed";
-
-        const detailsTable = properties.details ?
-          `<table><tr><th>Property</th><th>Value</th></tr>${Object.entries(properties.details).map(([key, value]) => {
-            if (typeof value === "object") {
-              return `<tr><td>${key}</td><td>${JSON.stringify(value)}</td></tr>`;
-            }
-            return `<tr><td>${key}</td><td>${value}</td></tr>`;
-          }).join("")}</table>` : "No details available.";
-
-        // Populate the sidebar with the formatted data
         content.innerHTML = `
-          <h2>${properties.name || "Unknown Assembly"}</h2>
-          <h3>Description:</h3>
-          <p>${properties.description || "No description available."}</p>
-          <h3>Details:</h3>
-          ${detailsTable}
-          <h3>Winner Party:</h3>
+          <h2 class='text-xl font-bold mb-2'>${properties.name || "Unknown Assembly"}</h2>
+          <h3 class='text-lg font-semibold mb-1'>Description:</h3>
+          <p class='text-sm mb-3'>${properties.description || "No description available."}</p>
+          <h3 class='text-lg font-semibold mb-1'>Winner Party:</h3>
           ${winnerParty}
-          <h3>Winning Candidates:</h3>
+          <h3 class='text-lg font-semibold mb-1'>Winning Candidates:</h3>
           ${winningCandidates}
-          <h3>Gender Electors:</h3>
-          ${genderElectors}
-          <h3>Vote Share:</h3>
-          ${voteShare}
-          <h3>MLA Details:</h3>
-          ${mlaDetails}
-          <h3>Issues:</h3>
-          ${issueData}
         `;
 
-        // Display the sidebar
-        sidebar.style.display = "block";
+        sidebar.classList.add("active");
       }
 
-      // Function to close the sidebar
       function closeSidebar() {
         const sidebar = document.getElementById("sidebar");
-        sidebar.style.display = "none";
+        sidebar.classList.remove("active");
+
+        if (activePolygon) {
+          activePolygon.setStyle({
+            color: "#007bff",
+            fillColor: "#007bff",
+            fillOpacity: 0.4,
+          });
+          activePolygon = null;
+        }
       }
     </script>
   </body>
 </html>
-
