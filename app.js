@@ -23,9 +23,6 @@ app.get('/', (req, res) => {
 });
 
 
-app.get("/", (req, res) => {
-    res.send("Hello World!");
-})
 
 // Start the server
 const PORT = 3000; // Port number
