@@ -14,7 +14,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     try {
         // Load your GeoJSON data from the file
-        const mapData = require(""); // Adjust path if necessary
+        const mapData = require("./data/madhypradesh.json"); // Adjust path if necessary
         res.render('index', { mapData }); // Pass GeoJSON data to the EJS template
     } catch (error) {
         console.error('Error loading GeoJSON data:', error.message);
@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 
 
 // Start the server
-const PORT = 4000; // Port number
+const PORT = 3000; // Port number
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
