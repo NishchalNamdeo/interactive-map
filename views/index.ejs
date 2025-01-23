@@ -152,6 +152,36 @@
           activePolygon = null;
         }
       }
+
+
+
+
+
+  //  region
+  mapData.features.forEach((feature) => {
+    if (feature.geometry.type === "Polygon") {
+      const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
+        coord[1],
+        coord[0],
+      ]);
+
+      const polygon = L.polygon(polygonCoords, {
+        color: "#007bff",
+        fillColor: "#007bff",
+        fillOpacity: 0.4,
+        weight: 2,
+      }).addTo(map);
+
+      polygon.bindTooltip(() => `<b>Name:</b> ${feature.properties.name || "N/A"}`);
+
+      polygon.on("click", function () {
+        const regionName = feature.properties.name || "unknown-region";
+        window.location.href = `/region/${encodeURIComponent(regionName)}`;
+      });
+    }
+  });
+
+
     </script>
   </body>
 </html>
