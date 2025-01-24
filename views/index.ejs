@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MapmyIndia with Enhanced Polygon Layer</title>
+    <title>Assembly Map</title>
     <script src="https://apis.mapmyindia.com/advancedmaps/v1/9d72a18e97e3d8ed15e22a4f0dd563a8/map_load?v=1.5"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -60,17 +60,16 @@
     </div>
 
     <script>
-      // Initialize the MapmyIndia map
       let map = new MapmyIndia.Map("map", {
         center: [23.259933, 77.412613],
         zoom: 8,
       });
 
-      let activePolygon = null; // Store reference to the active polygon
+      let activePolygon = null;
 
-      // Inject the GeoJSON data from the backend
       const mapData = <%- JSON.stringify(mapData) %>;
 
+      // Add polygons to the map
       mapData.features.forEach((feature) => {
         if (feature.geometry.type === "Polygon") {
           const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
@@ -85,14 +84,11 @@
             weight: 2,
           }).addTo(map);
 
-          // Add hover tooltip
-          polygon.bindTooltip(() => {
-            return `
-              <b>Name:</b> ${feature.properties.name || "N/A"}<br>
-              <b>Description:</b> ${feature.properties.description || "N/A"}`;
-          });
+          polygon.bindTooltip(() => `
+            <b>Name:</b> ${feature.properties.name || "N/A"}<br>
+            <b>Description:</b> ${feature.properties.description || "N/A"}
+          `);
 
-          // Click handler to show sidebar and highlight polygon
           polygon.on("click", function () {
             if (activePolygon) {
               activePolygon.setStyle({
@@ -114,28 +110,19 @@
         }
       });
 
+      // Double-click event to navigate to Parliament Map
+      map.on("dblclick", () => {
+        window.location.href = "/parliament";
+      });
+
       function showSidebar(properties) {
         const sidebar = document.getElementById("sidebar");
         const content = document.getElementById("sidebar-content");
 
-        const winnerParty = properties.details?.winner_party
-          ? `<table class='table-auto w-full border-collapse border border-gray-300 text-sm'><thead><tr class='bg-gray-200'><th class='border border-gray-300 px-2 py-1'>Year</th><th class='border border-gray-300 px-2 py-1'>Party</th></tr></thead><tbody>${Object.entries(properties.details.winner_party).map(([year, party]) => `<tr><td class='border border-gray-300 px-2 py-1'>${year}</td><td class='border border-gray-300 px-2 py-1'>${party}</td></tr>`).join("")}</tbody></table>`
-          : "<p class='text-sm text-gray-500'>No winner party details available.</p>";
-
-        const winningCandidates = properties.details?.winning_candidates
-          ? `<table class='table-auto w-full border-collapse border border-gray-300 text-sm'><thead><tr class='bg-gray-200'><th class='border border-gray-300 px-2 py-1'>Name</th><th class='border border-gray-300 px-2 py-1'>Votes</th><th class='border border-gray-300 px-2 py-1'>Party</th></tr></thead><tbody>${properties.details.winning_candidates.map(candidate => `<tr><td class='border border-gray-300 px-2 py-1'>${candidate.name}</td><td class='border border-gray-300 px-2 py-1'>${candidate.votes}</td><td class='border border-gray-300 px-2 py-1'>${candidate.party}</td></tr>`).join("")}</tbody></table>`
-          : "<p class='text-sm text-gray-500'>No winning candidates data available.</p>";
-
         content.innerHTML = `
-          <h2 class='text-xl font-bold mb-2'>${properties.name || "Unknown Assembly"}</h2>
-          <h3 class='text-lg font-semibold mb-1'>Description:</h3>
-          <p class='text-sm mb-3'>${properties.description || "No description available."}</p>
-          <h3 class='text-lg font-semibold mb-1'>Winner Party:</h3>
-          ${winnerParty}
-          <h3 class='text-lg font-semibold mb-1'>Winning Candidates:</h3>
-          ${winningCandidates}
+          <h2>${properties.name || "Unknown Assembly"}</h2>
+          <p>${properties.description || "No description available."}</p>
         `;
-
         sidebar.classList.add("active");
       }
 
@@ -152,36 +139,6 @@
           activePolygon = null;
         }
       }
-
-
-
-
-
-  //  region
-  mapData.features.forEach((feature) => {
-    if (feature.geometry.type === "Polygon") {
-      const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
-        coord[1],
-        coord[0],
-      ]);
-
-      const polygon = L.polygon(polygonCoords, {
-        color: "#007bff",
-        fillColor: "#007bff",
-        fillOpacity: 0.4,
-        weight: 2,
-      }).addTo(map);
-
-      polygon.bindTooltip(() => `<b>Name:</b> ${feature.properties.name || "N/A"}`);
-
-      polygon.on("click", function () {
-        const regionName = feature.properties.name || "unknown-region";
-        window.location.href = `/region/${encodeURIComponent(regionName)}`;
-      });
-    }
-  });
-
-
     </script>
   </body>
 </html>

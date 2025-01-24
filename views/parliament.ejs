@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Parliament Map</title>
+    <script src="https://apis.mapmyindia.com/advancedmaps/v1/9d72a18e97e3d8ed15e22a4f0dd563a8/map_load?v=1.5"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      #map {
+        height: 100vh;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map" class="border-2 border-blue-500 shadow-lg"></div>
+
+    <script>
+      let map = new MapmyIndia.Map("map", {
+        center: [23.259933, 77.412613],
+        zoom: 8,
+      });
+
+      const mapData = <%- JSON.stringify(mapData) %>;
+
+      // Add polygons to the map
+      mapData.features.forEach((feature) => {
+        if (feature.geometry.type === "Polygon") {
+          const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
+            coord[1],
+            coord[0],
+          ]);
+
+          const polygon = L.polygon(polygonCoords, {
+            color: "#007bff",
+            fillColor: "#007bff",
+            fillOpacity: 0.4,
+            weight: 2,
+          }).addTo(map);
+
+          polygon.bindTooltip(() => `
+            <b>Name:</b> ${feature.properties.name || "N/A"}<br>
+            <b>Description:</b> ${feature.properties.description || "N/A"}
+          `);
+        }
+      });
+
+      // Double-click event to navigate back to Assembly Map
+      map.on("dblclick", () => {
+        window.location.href = "/";
+      });
+    </script>
+  </body>
+</html>

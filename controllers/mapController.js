@@ -1,30 +1,28 @@
 const path = require('path');
 
-// Controller function for main map
-const renderMap = (req, res) => {
+// Controller function for Assembly Map
+const renderAssemblyMap = (req, res) => {
     try {
         const mapData = require(path.join(__dirname, '../data/madhypradesh.json'));
-        res.render('index', { mapData });
+        res.render('index', { mapData, nextPage: '/parliament', pageTitle: 'Assembly Map' });
     } catch (error) {
         console.error('Error loading GeoJSON data:', error.message);
         res.status(500).send('Error loading GeoJSON data.');
     }
 };
 
-// Controller function for region-specific map
-const renderRegionMap = (req, res) => {
-    const regionName = req.params.region;
+// Controller function for Parliament Map
+const renderParliamentMap = (req, res) => {
     try {
-        // Render the specific region's page with its data
-        res.render('region', { regionName });
+        const mapData = require(path.join(__dirname, '../data/parliament.json'));
+        res.render('index', { mapData, nextPage: '/', pageTitle: 'Parliament Map' });
     } catch (error) {
-        console.error('Error rendering region map:', error.message);
-        res.status(500).send('Error rendering region map.');
+        console.error('Error loading GeoJSON data:', error.message);
+        res.status(500).send('Error loading GeoJSON data.');
     }
-    
 };
 
 module.exports = {
-    renderMap,
-    renderRegionMap,
+    renderAssemblyMap,
+    renderParliamentMap,
 };
