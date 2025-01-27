@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assembly and District Maps</title>
+    <script src="https://apis.mapmyindia.com/advancedmaps/v1/9d72a18e97e3d8ed15e22a4f0dd563a8/map_load?v=1.5"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+      }
+      .map-container {
+        display: flex;
+        justify-content: space-around;
+        height: 100vh;
+      }
+      #sidebar {
+        display: none;
+        position: absolute;
+        top: 10%;
+        right: -35%;
+        width: 30%;
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-height: 80%;
+        overflow-y: auto;
+        border-radius: 8px;
+        padding: 20px;
+        transition: right 0.3s ease-in-out;
+      }
+      #sidebar.active {
+        display: block;
+        right: 5%;
+      }
+      #close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      #assembly-map,
+      #district-map {
+        width: 45%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div class="map-container">
+      <div id="assembly-map" class="shadow-lg"></div>
+      <div id="district-map" class="shadow-lg"></div>
+    </div>
+
+    <div id="sidebar">
+      <button id="close-btn" onclick="closeSidebar()">&times;</button>
+      <div id="sidebar-content"></div>
+    </div>
+
+    <script>
+      const assemblyData = <%- JSON.stringify(assemblyData) %>;
+      const districtData = <%- JSON.stringify(districtData) %>;
+
+      const assemblyMap = new MapmyIndia.Map("assembly-map", {
+        center: [23.259933, 77.412613],
+        zoom: 5,
+      });
+
+      const districtMap = new MapmyIndia.Map("district-map", {
+        center: [23.259933, 77.412613],
+        zoom: 5,
+      });
+
+      let activePolygon = null;
+
+      function addPolygonsToMap(map, data, type) {
+        data.features.forEach((feature) => {
+          if (feature.geometry.type === "Polygon") {
+            const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
+              coord[1],
+              coord[0],
+            ]);
+
+            const polygon = L.polygon(polygonCoords, {
+              color: type === "assembly" ? "#28a745" : "#007bff",
+              fillColor: type === "assembly" ? "#28a745" : "#007bff",
+              fillOpacity: 0.4,
+              weight: 2,
+            }).addTo(map);
+
+            // Add tooltip for hover
+            polygon.bindTooltip(() => `
+              <b>${type === "assembly" ? "Assembly" : "District"} Name:</b> ${
+          feature.properties.AC_NAME || feature.properties.dtname || "N/A"
+        }<br>
+              
+
+            `);
+
+            // Click event to show sidebar with specific map data
+            polygon.on("click", function () {
+              if (activePolygon) {
+                activePolygon.setStyle({
+                  color: type === "assembly" ? "#28a745" : "#007bff",
+                  fillColor: type === "assembly" ? "#28a745" : "#007bff",
+                  fillOpacity: 0.4,
+                });
+              }
+
+              polygon.setStyle({
+                color: "#ffeb3b",
+                fillColor: "#ffeb3b",
+                fillOpacity: 0.6,
+              });
+
+              activePolygon = polygon;
+              showSidebar(feature.properties, type);
+            });
+          }
+        });
+      }
+
+      function showSidebar(properties, type) {
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("sidebar-content");
+
+        if (type === "assembly") {
+          content.innerHTML = `
+            <p><b>Assembly Name:</b> ${properties.AC_NAME || "N/A"}</p>
+            <p><b>Parliament Name:</b> ${properties.PC_NAME || "N/A"}</p>
+            <p><b>District Name:</b> ${properties. DIST_NAME || "N/A"}</p>   
+            <p><b>State:</b> ${properties.ST_NAME || "N/A"}</p>
+            <p><b>Shape Length:</b> ${properties.Shape_Leng || "N/A"}</p>
+            <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p> 
+
+          `;
+        } else if (type === "district") {
+          content.innerHTML = `
+            <p><b>District Name:</b> ${properties.dtname || "N/A"}</p>
+            <p><b>State:</b> ${properties.stname || "N/A"}</p>
+            <p><b>Year:</b> ${properties.year_stat || "N/A"}</p>
+            <p><b>Shape Length:</b> ${properties.Shape_Length || "N/A"}</p>
+            <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p>
+          `;
+        }
+
+        sidebar.classList.add("active");
+      }
+
+      function closeSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.remove("active");
+
+        if (activePolygon) {
+          activePolygon.setStyle({
+            color: activePolygon.options.color,
+            fillColor: activePolygon.options.fillColor,
+            fillOpacity: 0.4,
+          });
+          activePolygon = null;
+        }
+      }
+
+      // Add polygons to respective maps
+      addPolygonsToMap(assemblyMap, assemblyData, "assembly");
+      addPolygonsToMap(districtMap, districtData, "district");
+    </script>
+  </body>
+</html>

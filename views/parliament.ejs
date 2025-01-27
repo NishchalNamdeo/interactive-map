@@ -11,6 +11,40 @@
         margin: 0;
         font-family: Arial, sans-serif;
       }
+      #sidebar {
+        display: none;
+        position: absolute;
+        top: 10%;
+        right: -35%;
+        width: 30%;
+        background-color: #f8f9fa;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-height: 80%;
+        overflow-y: auto;
+        border-radius: 8px;
+        padding: 20px;
+        transition: right 0.3s ease-in-out;
+      }
+      #sidebar.active {
+        display: block;
+        right: 5%;
+      }
+      #close-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
       #map {
         height: 100vh;
         width: 100%;
@@ -18,18 +52,25 @@
     </style>
   </head>
   <body>
-    <div id="map" class="border-2 border-blue-500 shadow-lg"></div>
+    <div id="map" class="shadow-lg"></div>
+
+    <div id="sidebar">
+      <button id="close-btn" onclick="closeSidebar()">&times;</button>
+      <div id="sidebar-content"></div>
+    </div>
 
     <script>
-      let map = new MapmyIndia.Map("map", {
+      const parliamentData = <%- JSON.stringify(parliamentData) %>;
+
+      const map = new MapmyIndia.Map("map", {
         center: [23.259933, 77.412613],
-        zoom: 8,
+        zoom: 5,
       });
 
-      const mapData = <%- JSON.stringify(mapData) %>;
+      let activePolygon = null;
 
       // Add polygons to the map
-      mapData.features.forEach((feature) => {
+      parliamentData.features.forEach((feature) => {
         if (feature.geometry.type === "Polygon") {
           const polygonCoords = feature.geometry.coordinates[0].map((coord) => [
             coord[1],
@@ -43,17 +84,70 @@
             weight: 2,
           }).addTo(map);
 
+          // Add tooltip for hover
           polygon.bindTooltip(() => `
-            <b>Name:</b> ${feature.properties.name || "N/A"}<br>
-            <b>Description:</b> ${feature.properties.description || "N/A"}
+            <b>Parliament Name:</b> ${feature.properties.PC_NAME || "N/A"}<br>
+            <b>Parliament No:</b> ${feature.properties.PC_NO || "N/A"}
           `);
+
+          // Single Click Event to Show Sidebar
+          polygon.on("click", function () {
+            if (activePolygon) {
+              activePolygon.setStyle({
+                color: "#007bff",
+                fillColor: "#007bff",
+                fillOpacity: 0.4,
+              });
+            }
+
+            polygon.setStyle({
+              color: "#ffeb3b",
+              fillColor: "#ffeb3b",
+              fillOpacity: 0.6,
+            });
+
+            activePolygon = polygon;
+            showSidebar(feature.properties);
+          });
+
+          // Double Click Event to Redirect to Assembly Route
+          polygon.on("dblclick", function () {
+            const districtName = feature.properties.DIST_NAME || "district";
+            window.location.href = `/assembly/${encodeURIComponent(districtName)}`;
+          });
         }
       });
 
-      // Double-click event to navigate back to Assembly Map
-      map.on("dblclick", () => {
-        window.location.href = "/";
-      });
+      // Show sidebar with GeoJSON properties
+      function showSidebar(properties) {
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("sidebar-content");
+
+        content.innerHTML = `
+          <p><b>Parliament Name:</b> ${properties.PC_NAME || "N/A"}</p>
+          <p><b>Parliament No:</b> ${properties.PC_NO || "N/A"}</p>
+          <p><b>State Name:</b> ${properties.ST_NAME || "N/A"}</p>
+          <p><b>Shape Length:</b> ${properties.Shape_Leng || "N/A"}</p>
+          <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p>
+          <p><b>State Code:</b> ${properties.ST_CODE || "N/A"}</p>
+        `;
+        sidebar.classList.add("active");
+      }
+
+      // Close sidebar
+      function closeSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.remove("active");
+
+        if (activePolygon) {
+          activePolygon.setStyle({
+            color: "#007bff",
+            fillColor: "#007bff",
+            fillOpacity: 0.4,
+          });
+          activePolygon = null;
+        }
+      }
     </script>
   </body>
 </html>

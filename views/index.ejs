@@ -38,8 +38,8 @@
         color: white;
         border: none;
         border-radius: 50%;
-        width: 30px;
-        height: 30px;
+        width: 20px;
+        height: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -52,7 +52,7 @@
     </style>
   </head>
   <body>
-    <div id="map" class="border-2 border-blue-500 shadow-lg"></div>
+    <div id="map" class=" shadow-lg"></div>
 
     <div id="sidebar">
       <button id="close-btn" onclick="closeSidebar()">&times;</button>
@@ -62,13 +62,14 @@
     <script>
       let map = new MapmyIndia.Map("map", {
         center: [23.259933, 77.412613],
-        zoom: 8,
+        zoom: 5,
       });
-
+    
       let activePolygon = null;
-
+    
+      // Access GeoJSON data from the server
       const mapData = <%- JSON.stringify(mapData) %>;
-
+    
       // Add polygons to the map
       mapData.features.forEach((feature) => {
         if (feature.geometry.type === "Polygon") {
@@ -76,19 +77,21 @@
             coord[1],
             coord[0],
           ]);
-
+    
           const polygon = L.polygon(polygonCoords, {
             color: "#007bff",
             fillColor: "#007bff",
             fillOpacity: 0.4,
             weight: 2,
           }).addTo(map);
-
+    
+          // Add tooltip for hover
           polygon.bindTooltip(() => `
-            <b>Name:</b> ${feature.properties.name || "N/A"}<br>
-            <b>Description:</b> ${feature.properties.description || "N/A"}
+            <b>State Name:</b> ${feature.properties.STNAME || "N/A"}<br>
+            <b>State Code:</b> ${feature.properties.STCODE11 || "N/A"}
           `);
-
+    
+          // Click event to show sidebar with full details
           polygon.on("click", function () {
             if (activePolygon) {
               activePolygon.setStyle({
@@ -97,39 +100,46 @@
                 fillOpacity: 0.4,
               });
             }
-
+    
             polygon.setStyle({
               color: "#ffeb3b",
               fillColor: "#ffeb3b",
               fillOpacity: 0.6,
             });
-
+    
             activePolygon = polygon;
             showSidebar(feature.properties);
           });
         }
       });
-
+    
       // Double-click event to navigate to Parliament Map
       map.on("dblclick", () => {
         window.location.href = "/parliament";
       });
-
+    
+      // Show sidebar with GeoJSON properties
       function showSidebar(properties) {
         const sidebar = document.getElementById("sidebar");
         const content = document.getElementById("sidebar-content");
-
+    
         content.innerHTML = `
-          <h2>${properties.name || "Unknown Assembly"}</h2>
-          <p>${properties.description || "No description available."}</p>
+          <p><b>State Name:</b> ${properties.STNAME || "N/A"}</p>
+          <p><b>State Code:</b> ${properties.STCODE11 || "N/A"}</p>
+          <p><b>Short Name:</b> ${properties.STNAME_SH || "N/A"}</p>
+          <p><b>Shape Length:</b> ${properties.Shape_Length || "N/A"}</p>
+          <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p>
+          <p><b>Object ID:</b> ${properties.OBJECTID || "N/A"}</p>
+          <p><b>State LGD:</b> ${properties.State_LGD || "N/A"}</p>
         `;
         sidebar.classList.add("active");
       }
-
+    
+      // Close sidebar
       function closeSidebar() {
         const sidebar = document.getElementById("sidebar");
         sidebar.classList.remove("active");
-
+    
         if (activePolygon) {
           activePolygon.setStyle({
             color: "#007bff",
@@ -140,5 +150,6 @@
         }
       }
     </script>
+    
   </body>
 </html>
