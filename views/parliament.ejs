@@ -64,10 +64,24 @@
 
       const map = new MapmyIndia.Map("map", {
         center: [23.259933, 77.412613],
-        zoom: 5,
+        zoom: 6,
       });
 
       let activePolygon = null;
+
+      // Predefined dark colors for polygons
+      const polygonColors = [
+        "#FFC90E", "#FFC90E", "#b2a670", "#b2a670", "#99D8EA", "#99D8EA",
+        "#99D8EA", "#99D8EA", "#FF5555", "#FF5555", "#FF5555", "#808000", 
+        "#FFF100", "#FFF100", "#FFF100", "#FFF100", "#B5E51C",
+        "#B5E51C", "#B5E51C", "#B5E51C" ,
+        "#FEAEC8", "#FEAEC8", "#FEAEC8",
+        "#C2C2C2", 
+        "#C2C2C2", 
+        "#FEAEC8", "#C2C2C2","#C2C2C2","#8080FE"
+      ];
+
+      let colorIndex = 0;
 
       // Add polygons to the map
       parliamentData.features.forEach((feature) => {
@@ -77,10 +91,13 @@
             coord[0],
           ]);
 
+          const currentColor = polygonColors[colorIndex % polygonColors.length];
+          colorIndex++;
+
           const polygon = L.polygon(polygonCoords, {
-            color: "#007bff",
-            fillColor: "#007bff",
-            fillOpacity: 0.4,
+            color: currentColor,
+            fillColor: currentColor,
+            fillOpacity: 0.8,
             weight: 2,
           }).addTo(map);
 
@@ -94,16 +111,16 @@
           polygon.on("click", function () {
             if (activePolygon) {
               activePolygon.setStyle({
-                color: "#007bff",
-                fillColor: "#007bff",
-                fillOpacity: 0.4,
+                color: activePolygon.options.originalColor,
+                fillColor: activePolygon.options.originalColor,
+                fillOpacity: 0.6,
               });
             }
 
             polygon.setStyle({
-              color: "#ffeb3b",
-              fillColor: "#ffeb3b",
-              fillOpacity: 0.6,
+              color: "#000",
+              fillColor: "#000",
+              fillOpacity: 0.8,
             });
 
             activePolygon = polygon;
@@ -115,6 +132,9 @@
             const districtName = feature.properties.DIST_NAME || "district";
             window.location.href = `/assembly/${encodeURIComponent(districtName)}`;
           });
+
+          // Store original color in polygon options
+          polygon.options.originalColor = currentColor;
         }
       });
 
@@ -129,7 +149,22 @@
           <p><b>State Name:</b> ${properties.ST_NAME || "N/A"}</p>
           <p><b>Shape Length:</b> ${properties.Shape_Leng || "N/A"}</p>
           <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p>
-          <p><b>State Code:</b> ${properties.ST_CODE || "N/A"}</p>
+          <p><b>LS NO:</b> ${properties.LS_NO || "N/A"}</p>
+          <p><b>LOKSHABHA:</b> ${properties.LOKSHABHA || "N/A"}</p>
+          <p><b>VIDHASHABHA AREA:</b> ${properties.VIDHASHABHA_AREA || "N/A"}</p>
+          <p><b>SEAT:</b> ${properties.SEAT || "N/A"}</p>
+          <p><b>WINNER NAME:</b> ${properties.WINNER_NAME || "N/A"}</p>
+          <p><b>WINNER GENDER :</b> ${properties.WINNER_GENDER || "N/A"}</p>
+          <p><b>WINNER VOTES :</b> ${properties.WINNER_VOTE || "N/A"}</p>
+          <p><b>WINNER VOTES %:</b> ${properties.WINNER_VOTES || "N/A"}</p>
+          <p><b>PARTY:</b> ${properties.PARTY || "N/A"}</p>
+          <p><b>RUNNER-UP NAME:</b> ${properties.RUNNER_UP_NAME || "N/A"}</p>
+          <p><b>RUNNER GENDER:</b> ${properties.RUNNER_GENDER || "N/A"}</p>
+          <p><b>RUNNER PARTY:</b> ${properties.RUNNER_PARTY || "N/A"}</p>
+          <p><b>RUNNER VOTES:</b> ${properties.RUNNER_VOTE || "N/A"}</p>
+          <p><b>RUNNER VOTES %:</b> ${properties.RUNNER_VOTES || "N/A"}</p>
+          <p><b>TOTAL_VOTES DIFFRENCE:</b> ${properties.TOTAL_VOTES_DIFFRENCE || "N/A"}</p>
+          <p><b>SEAT Type:</b> ${properties.SEAT_Type || "N/A"}</p>
         `;
         sidebar.classList.add("active");
       }
@@ -141,9 +176,9 @@
 
         if (activePolygon) {
           activePolygon.setStyle({
-            color: "#007bff",
-            fillColor: "#007bff",
-            fillOpacity: 0.4,
+            color: activePolygon.options.originalColor,
+            fillColor: activePolygon.options.originalColor,
+            fillOpacity: 0.6,
           });
           activePolygon = null;
         }
