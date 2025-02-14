@@ -75,15 +75,22 @@
 
       const assemblyMap = new MapmyIndia.Map("assembly-map", {
         center: [23.259933, 77.412613],
-        zoom: 5,
+        zoom: 6,
       });
 
       const districtMap = new MapmyIndia.Map("district-map", {
         center: [23.259933, 77.412613],
-        zoom: 5,
+        zoom: 6,
       });
 
       let activePolygon = null;
+
+      const districtColors = [
+        "#FFC90E", "#FF5555", "#99D8EA", "#808000", "#FFF100", "#B5E51C",
+        "#FEAEC8", "#C2C2C2", "#8080FE", "#FF5733", "#8E44AD", "#3498DB",
+        "#1ABC9C", "#2ECC71", "#E74C3C", "#F39C12", "#D35400", "#7F8C8D"
+      ];
+      let districtColorIndex = 0;
 
       function addPolygonsToMap(map, data, type) {
         data.features.forEach((feature) => {
@@ -93,41 +100,44 @@
               coord[0],
             ]);
 
+            const fillColor = type === "assembly" ? "#28a745" : districtColors[districtColorIndex % districtColors.length];
+            districtColorIndex++;
+
             const polygon = L.polygon(polygonCoords, {
-              color: type === "assembly" ? "#28a745" : "#007bff",
-              fillColor: type === "assembly" ? "#28a745" : "#007bff",
-              fillOpacity: 0.4,
+              color: fillColor,
+              fillColor: fillColor,
+              fillOpacity: 0.6,
               weight: 2,
             }).addTo(map);
 
             // Add tooltip for hover
             polygon.bindTooltip(() => `
               <b>${type === "assembly" ? "Assembly" : "District"} Name:</b> ${
-          feature.properties.AC_NAME || feature.properties.dtname || "N/A"
-        }<br>
-              
-
+                feature.properties.AC_NAME || feature.properties.dtname || "N/A"
+              }<br>
             `);
 
             // Click event to show sidebar with specific map data
             polygon.on("click", function () {
               if (activePolygon) {
                 activePolygon.setStyle({
-                  color: type === "assembly" ? "#28a745" : "#007bff",
-                  fillColor: type === "assembly" ? "#28a745" : "#007bff",
-                  fillOpacity: 0.4,
+                  color: activePolygon.options.originalColor,
+                  fillColor: activePolygon.options.originalColor,
+                  fillOpacity: 0.6,
                 });
               }
 
               polygon.setStyle({
-                color: "#ffeb3b",
-                fillColor: "#ffeb3b",
-                fillOpacity: 0.6,
+                color: "#000",
+                fillColor: "#000",
+                fillOpacity: 0.8,
               });
 
               activePolygon = polygon;
               showSidebar(feature.properties, type);
             });
+
+            polygon.options.originalColor = fillColor;
           }
         });
       }
@@ -140,11 +150,10 @@
           content.innerHTML = `
             <p><b>Assembly Name:</b> ${properties.AC_NAME || "N/A"}</p>
             <p><b>Parliament Name:</b> ${properties.PC_NAME || "N/A"}</p>
-            <p><b>District Name:</b> ${properties. DIST_NAME || "N/A"}</p>   
+            <p><b>District Name:</b> ${properties.DIST_NAME || "N/A"}</p>   
             <p><b>State:</b> ${properties.ST_NAME || "N/A"}</p>
             <p><b>Shape Length:</b> ${properties.Shape_Leng || "N/A"}</p>
             <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p> 
-
           `;
         } else if (type === "district") {
           content.innerHTML = `
@@ -165,15 +174,14 @@
 
         if (activePolygon) {
           activePolygon.setStyle({
-            color: activePolygon.options.color,
-            fillColor: activePolygon.options.fillColor,
-            fillOpacity: 0.4,
+            color: activePolygon.options.originalColor,
+            fillColor: activePolygon.options.originalColor,
+            fillOpacity: 0.6,
           });
           activePolygon = null;
         }
       }
 
-      // Add polygons to respective maps
       addPolygonsToMap(assemblyMap, assemblyData, "assembly");
       addPolygonsToMap(districtMap, districtData, "district");
     </script>

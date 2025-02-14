@@ -125,11 +125,16 @@
 
             activePolygon = polygon;
             showSidebar(feature.properties);
+
+
+            
           });
 
           // Double Click Event to Redirect to Assembly Route
           polygon.on("dblclick", function () {
-            const districtName = feature.properties.DIST_NAME || "district";
+            const assemblyName = feature.properties.AC_NAME || "N/A";
+            const districtName = feature.properties.dtname || "N/A";
+
             window.location.href = `/assembly/${encodeURIComponent(districtName)}`;
           });
 
@@ -146,12 +151,11 @@
         content.innerHTML = `
           <p><b>Parliament Name:</b> ${properties.PC_NAME || "N/A"}</p>
           <p><b>Parliament No:</b> ${properties.PC_NO || "N/A"}</p>
+          <p><b>Ac Name:</b> ${properties.AC_NAME || "N/A"}</p>
+          <p><b>DISTRICT:</b> ${properties.dtname || "N/A"}</p>
           <p><b>State Name:</b> ${properties.ST_NAME || "N/A"}</p>
           <p><b>Shape Length:</b> ${properties.Shape_Leng || "N/A"}</p>
           <p><b>Shape Area:</b> ${properties.Shape_Area || "N/A"}</p>
-          <p><b>LS NO:</b> ${properties.LS_NO || "N/A"}</p>
-          <p><b>LOKSHABHA:</b> ${properties.LOKSHABHA || "N/A"}</p>
-          <p><b>VIDHASHABHA AREA:</b> ${properties.VIDHASHABHA_AREA || "N/A"}</p>
           <p><b>SEAT:</b> ${properties.SEAT || "N/A"}</p>
           <p><b>WINNER NAME:</b> ${properties.WINNER_NAME || "N/A"}</p>
           <p><b>WINNER GENDER :</b> ${properties.WINNER_GENDER || "N/A"}</p>

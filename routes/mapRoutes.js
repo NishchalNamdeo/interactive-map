@@ -5,7 +5,6 @@ const mapController = require('../controllers/mapController');
 // Define routes
 router.get('/', mapController.renderAssemblyMap); // Route for Assembly Map
 router.get('/parliament', mapController.renderParliamentMap); // Route for Parliament Map
-// Route to handle Assembly and District Maps
 router.get('/assembly/:district', mapController.renderAssemblyDistrictMap);
 
 module.exports = router;

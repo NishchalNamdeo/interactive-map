@@ -12,7 +12,6 @@ const renderAssemblyMap = (req, res) => {
 };
 
 // Controller function for Parliament Map
-// Controller function for Parliament Map
 const renderParliamentMap = (req, res) => {
     try {
         const parliamentData = require(path.join(__dirname, '../data/parliament.json'));
